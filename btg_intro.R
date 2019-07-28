@@ -29,10 +29,12 @@ tabs = c(4,7,0)
 # cat(unique(sort(btg)))
 # a b e f g h i k m n o r t y
 
+# Setup by sourcing definitions and functions in various files.
 source("letters_def.R")
 source("letter_functions.R")
 source("word_functions.R")
 source("plot_functions.R")
-# source("network_functions.R")
+source("graph_functions.R")
 
-plot_word(btg, tabs)
+# Call into the above to actually make it all happen.
+source("animation_script.R")
