@@ -21,6 +21,8 @@
 
 require("stringr")
 require("spatgraphs")
+require("animation")
+
 
 # Setup by sourcing definitions and functions in various files.
 source("letters_def.R")

@@ -1,5 +1,7 @@
 
+# We want the sensible circle constant here!
 tau = 2 * pi
+
 add_points = list("p" = matrix(0, 0, 2),
                   "xlim" = c(0, 0),
                   "ylim" = c(0, 0))
@@ -125,5 +127,4 @@ get_letter_dims = function(l){
     return(max(sapply(letters, get_letter_dims)[4,]) + 1)
   c(0, 0, 0, 0)
 }
-
 

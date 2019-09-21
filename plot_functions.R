@@ -1,7 +1,6 @@
 
-plot_word = function(w, tabs){
-  w_split = str_split(w, "", simplify = T)
-  foo = get_letter_points_and_edgelist(w_split, tabs)
+plot_word = function(w, indents){
+  foo = get_letter_vertices_and_edgelist(w, indents)
   p = foo$p
   E = foo$E
   graphics.off()

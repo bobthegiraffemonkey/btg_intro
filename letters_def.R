@@ -1,7 +1,18 @@
 
-outlines = list()
+# Setup the list, then add each letter to it. Use the scratch_letters
+# file for designing. See letter_functions for what the functions do
+# in more detail.
 
-# g h r t y
+# o; x y, point
+# h: x y, point, can only wobble horizontally
+# v; x y, point, can only wobble vertically
+# n: {}, newline
+# f; x y theta_1 theta_2 radius n, n vertices even spaced on circle between angles given
+# s: x1 y1 x2 y2 n ccw, semicircle with n vertices
+
+# If there's one poly inside another (like 'o'), do the outside first.
+
+outlines = list()
 
 outlines[["a"]] = "
 h 4 0
