@@ -25,6 +25,8 @@ point_border_width = tau
 view_border_width = tau/2
 line_width = 1
 
+f.lux=T
+
 animate_and_save(word,
                  indents,
                  "foo.mp4")

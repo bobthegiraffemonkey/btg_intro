@@ -22,6 +22,7 @@
 require("stringr")
 require("spatgraphs")
 require("animation")
+require("Matrix")
 
 
 # Setup by sourcing definitions and functions in various files.
@@ -31,3 +32,13 @@ source("word_functions.R")
 source("plot_functions.R")
 source("graph_functions.R")
 source("animate.R")
+
+if (f.lux){
+  colours=c(rgb(.9,.9,0), rgb(1,1,1),
+            rgb(1,0,0),  rgb(1,.5,0),
+            rgb(0,1,0),  rgb(0.2,0.2,1),)
+} else {
+  colours=c(rgb(1,1,0), rgb(1,1,1),
+            rgb(1,0,0), rgb(1,.5,0),
+            rgb(0,1,0), rgb(0,0,1))
+}
