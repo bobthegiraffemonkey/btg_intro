@@ -5,6 +5,8 @@ animate_and_save = function(w, indents, filename, dev=TRUE){
   # if true, plot to external window, else actually live up to
   # function name.
   
-  word_split = str_split(w, "", simplify = T)
+  word_split = str_split(w, "", simplify = TRUE)
+  data = init(word_split)
+  print(summary(data))
   plot_word(word_split, indents)
 }

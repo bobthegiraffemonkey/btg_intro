@@ -21,6 +21,10 @@ win_height = 4.8
 n_rand = 1024
 set.seed(175)
 
+initial_wait_s = 1
+fps = 50 # ???
+
+
 point_border_width = tau
 view_border_width = tau/2
 line_width = 1
