@@ -7,30 +7,29 @@ setwd("code/cubes/btg_intro")
 
 word = "Bob\nthe\nGiraffemonkey"
 indents = c(4,7,0)
+# filename = "btg_intro.mp4"
+filename = "foo.mp4"
 
 # cat(unique(sort(btg)))
 # a b e f g h i k m n o r t y
 
-source("main.R")
-
 
 ### Config ###
-win_width = 8
-win_height = 4.8
+settings = list()
+settings["win_width"] = 8
+settings["win_height"] = 4.8
 
-n_rand = 1024
-set.seed(175)
+settings["n_rand"] = 1024
+settings["seed"] = 175
 
-initial_wait_s = 1
-fps = 50 # ???
+settings["initial_wait_s"] = 1
+settings["fps"] = 50 # ???
+
+settings["point_border_width"] = tau
+settings["view_border_width"] = tau/2
+settings["line_width"] = 1
+
+settings["f.lux"] = T
 
 
-point_border_width = tau
-view_border_width = tau/2
-line_width = 1
-
-f.lux=T
-
-animate_and_save(word,
-                 indents,
-                 "foo.mp4")
+source("main.R")

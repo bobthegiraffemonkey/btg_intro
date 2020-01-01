@@ -34,4 +34,6 @@ source("graph_functions.R")
 source("animate.R")
 source("init.R")
 
-e = new.env(parent = globalenv())
+animate_and_save(word,
+                 indents,
+                 filename)

@@ -5,7 +5,10 @@
 # variables. I know that's generally bad, but for a small personal
 # project with a very visual output being ran O(1) times, I don't care.
 
+w=btg
 init = function(w){
+  vars = list()
+  
   letter_vertices_and_edgelist = get_letter_vertices_and_edgelist(w, indents)
   n_w = nrow(letter_vertices_and_edgelist$p)
   
@@ -14,12 +17,17 @@ init = function(w){
   y0 = min(letter_vertices_and_edgelist$p[,2])
   y1 = max(letter_vertices_and_edgelist$p[,2])
   
+  vars$view_xlim = c(x0 - settings$view_border_width,
+                     x1 + settings$view_border_width)
+  vars$view_ylim = c(y0 - settings$view_border_width,
+                     y1 + settings$view_border_width)
+
   p_random = cbind(runif(n_rand,
-                         x0 - point_border_width,
-                         x1 + point_border_width),
+                         x0 - settings$point_border_width,
+                         x1 + settings$point_border_width),
                    runif(n_rand,
-                         y0 - point_border_width,
-                         y1 + point_border_width))
+                         y0 - settings$point_border_width,
+                         y1 + settings$point_border_width))
   
   p = rbind(letter_vertices_and_edgelist$p,
             p_random)
@@ -33,8 +41,8 @@ init = function(w){
   m_max = sum(unlist(lapply(adjl, length))) / 2 + 
     nrow(letter_vertices_and_edgelist$E)
   
-  undir_edge_properties = c("v1", "v2", "id", "col", "length", "segments", "show")
-  dir_edge_properties = c("v1", "v2", "col1", "col2", "progress")
+  undir_edge_properties = c("v1", "v2", "id", "col", "segments", "hide")
+  dir_edge_properties = c("col1", "col2", "progress")
   undir_edges = matrix(0, m_max, length(undir_edge_properties))
   
   # Put the edges from the letters in first, where edges (i,j) have i<j
@@ -67,20 +75,34 @@ init = function(w){
   undir_edges[,"id"] = c(letter_vertices_and_edgelist$id,
                          rep(0, m - length(letter_vertices_and_edgelist$id)))
   
-  for (i in 1:max(undir_edges[,"id"])){
+  for (i in 0:max(undir_edges[,"id"])){
     poly = which(undir_edges[,"id"] == i)
-    rand_colours = get_colour_cycle(length(poly))
-    dir_edges[poly, "col1"] = rand_colours
-    dir_edges[poly, "col2"] = rand_colours[c(2:length(poly),1)]
-    dir_edges[poly + m, "col2"] = rand_colours
-    dir_edges[poly + m, "col1"] = rand_colours[c(2:length(poly),1)]
-    undir_edges[poly, "col"] = rgb(1,1,1)
+    if (i > 0){
+      rand_colours = get_colour_cycle(length(poly))
+      dir_edges[poly, "col1"] = rand_colours
+      dir_edges[poly, "col2"] = rand_colours[c(2:length(poly),1)]
+      dir_edges[poly + m, "col2"] = rand_colours
+      dir_edges[poly + m, "col1"] = rand_colours[c(2:length(poly),1)]
+      undir_edges[poly, "col"] = 2  # white
+    } else {
+      undir_edges[poly, "col"] = dir_edges[poly, "col1"] =
+                                 dir_edges[poly, "col2"] =
+                                 dir_edges[poly + m, "col2"] =
+                                 dir_edges[poly + m, "col1"] =
+                                 runif(1, 0.9, 1)
+    }
   }
-  
-  list(dir_edges, undir_edges, vertices, p)
+
+  psum = rowSums(p^2)
+  D = tcrossprod(psum, matrix(1, n, 1))
+  D = D + t(D) - 2*tcrossprod(p)
+  diag(D) = 0
+  lengths = sqrt(D[undir_edges[, c("v1", "v2")]])
+  undir_edges[, "segments"] = floor(5 + 2 * lengths)
+
+  list(dir_edges=dir_edges,
+       undir_edges=undir_edges,
+       vertices=vertices,
+       p=p,
+       vars=vars)
 }
-
-
-
-
-
