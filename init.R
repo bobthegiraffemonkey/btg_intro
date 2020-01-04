@@ -5,7 +5,6 @@
 # variables. I know that's generally bad, but for a small personal
 # project with a very visual output being ran O(1) times, I don't care.
 
-w=btg
 init = function(w){
   vars = list()
   
@@ -22,10 +21,10 @@ init = function(w){
   vars$view_ylim = c(y0 - settings$view_border_width,
                      y1 + settings$view_border_width)
 
-  p_random = cbind(runif(n_rand,
+  p_random = cbind(runif(settings$n_rand,
                          x0 - settings$point_border_width,
                          x1 + settings$point_border_width),
-                   runif(n_rand,
+                   runif(settings$n_rand,
                          y0 - settings$point_border_width,
                          y1 + settings$point_border_width))
   
@@ -83,13 +82,12 @@ init = function(w){
       dir_edges[poly, "col2"] = rand_colours[c(2:length(poly),1)]
       dir_edges[poly + m, "col2"] = rand_colours
       dir_edges[poly + m, "col1"] = rand_colours[c(2:length(poly),1)]
-      undir_edges[poly, "col"] = 2  # white
     } else {
       undir_edges[poly, "col"] = dir_edges[poly, "col1"] =
                                  dir_edges[poly, "col2"] =
                                  dir_edges[poly + m, "col2"] =
                                  dir_edges[poly + m, "col1"] =
-                                 runif(1, 0.9, 1)
+                                 runif(length(poly), 0.01, 0.2)
     }
   }
 

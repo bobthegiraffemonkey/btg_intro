@@ -25,9 +25,9 @@ settings["seed"] = 175
 settings["initial_wait_s"] = 1
 settings["fps"] = 50 # ???
 
-settings["point_border_width"] = tau
-settings["view_border_width"] = tau/2
-settings["line_width"] = 1
+settings["point_border_width"] = 6.28
+settings["view_border_width"] = 6.28 / 2
+settings["line_width"] = 6.28 / 4
 
 settings["f.lux"] = T
 
