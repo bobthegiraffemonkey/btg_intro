@@ -4,10 +4,13 @@
 # sure it's worth the effort here, so I'm tracking the state with global
 # variables. I know that's generally bad, but for a small personal
 # project with a very visual output being ran O(1) times, I don't care.
+# At least I'm passing some of it around in lists.
 
 init = function(w){
+  # Things to pass out to make available in other places
   vars = list()
   
+  # This is just for the words, not any other edges or vertices.
   letter_vertices_and_edgelist = get_letter_vertices_and_edgelist(w, indents)
   n_w = nrow(letter_vertices_and_edgelist$p)
   
@@ -34,20 +37,21 @@ init = function(w){
   n = nrow(p)
   adjl = get_relative_neighbourhood_graph_as_adjlist(p)
   
-  vertex_properties = c("infected")
-  vertices = matrix(0, n, length(vertex_properties))
+  vertex_properties = c("exposed", "infected")
+  vertices = matrix(TRUE, n, length(vertex_properties))
+  vertices[sample(n, 1)] = 1
   
   m_max = sum(unlist(lapply(adjl, length))) / 2 + 
     nrow(letter_vertices_and_edgelist$E)
   
-  undir_edge_properties = c("v1", "v2", "id", "col", "segments", "hide")
-  dir_edge_properties = c("col1", "col2", "progress")
+  undir_edge_properties = c("v1", "v2", "id", "col", "hide")
+  dir_edge_properties = c("v1", "v2", "col1", "col2", "progress", "segments")
   undir_edges = matrix(0, m_max, length(undir_edge_properties))
   
   # Put the edges from the letters in first, where edges (i,j) have i<j
   # Possibly stupid for large n, but n isn't large and this is neat.
   for (k in 1:n_w){
-    undir_edges[k, 1:2] = range(letter_vertices_and_edgelist$E[k,])
+    undir_edges[k, c("v1", "v2")] = range(letter_vertices_and_edgelist$E[k,])
   }
   
   # I'm very glad n isn't large so I don't need to optimise much.
@@ -66,7 +70,7 @@ init = function(w){
   
   undir_edges = undir_edges[1:k,]
   dir_edges = matrix(0, 2*m, length(dir_edge_properties))
-  dir_edges[1:m, 1:2] = dir_edges[1:m + m, 2:1] = undir_edges[, 1:2]
+  dir_edges[1:m, c("v1", "v2")] = dir_edges[1:m + m, c("v2", "v1")] = undir_edges[, c("v1", "v2")]
   
   colnames(undir_edges) = undir_edge_properties
   colnames(dir_edges) = dir_edge_properties
@@ -96,7 +100,7 @@ init = function(w){
   D = D + t(D) - 2*tcrossprod(p)
   diag(D) = 0
   lengths = sqrt(D[undir_edges[, c("v1", "v2")]])
-  undir_edges[, "segments"] = floor(5 + 2 * lengths)
+  dir_edges[, "segments"] = rep(floor(5 + 2 * lengths), 2)
 
   list(dir_edges=dir_edges,
        undir_edges=undir_edges,

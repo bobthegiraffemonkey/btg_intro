@@ -151,3 +151,26 @@ get_colour_cycle = function(n){
 }
 
 
+update_state = function(undir_edges, dir_edges, vertices){
+  infection_rate = 0.42
+  n = nrow(vertices)
+  m = nrow(undir_edges)
+  vertices$infected = vertices$infected || (vertices$exposed && runif(n) < infection_rate)
+  v_inf = which(vertices$infected)
+  e_inf = which(undir_edges[c("v1", "v2")] %in% v_inf)
+  
+  dir_edges[e_inf, "progress"] = max(dir_edges[e_inf, "progress"] + 1,
+                                     dir_edges[e_inf, "segments"])
+  met = which(dir_edges[1:m, "progress"] + dir_edges[(m+1):(2*m), "progress"] >= dir_edges[1:m, "segments"])
+  dir_edges[met, "progress"] = dir_edges[met + m, "progress"] = dir_edges[met, "segments"]
+  undir_edges[met, "hide"] = TRUE
+  complete = which(dir_edges$progress == dir_edges$segments)
+  vertices$exposed[dir_edges[complete, "v2"]] = TRUE
+  done = length(complete) == 2*m
+
+  list(dir_edges=dir_edges,
+       undir_edges=undir_edges,
+       vertices=vertices,
+       done=done)
+}
+
