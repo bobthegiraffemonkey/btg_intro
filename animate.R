@@ -6,16 +6,12 @@ animate_and_save = function(w, indents, filename, dev=TRUE){
   # function name.
   
   word_split = str_split(w, "", simplify = TRUE)
-  data = init(word_split)
-  p=data$p
-  vars = data$vars
+  stuff = init(word_split)
   
-  data$V[,] = TRUE
-  
-  for (i in 1:2){
-    data = update_state(data$E, data$V)
+  for (i in 1:343){
+    stuff$data = update_state(stuff$data$E, stuff$data$V)
   }
   
-  draw_graph(p, data$E, vars)
+  draw_graph(stuff$p, stuff$data$E, stuff$vars)
   # plot_word(word_split, indents)
 }

@@ -40,7 +40,6 @@ draw_graph = function(p, E, vars, dev=T){
   
   par(mar=rep(0, 4),
       mgp=c(0,0,0),
-      lwd=settings$line_width,
       bg="black")
   
   plot(NULL,
@@ -56,13 +55,18 @@ draw_graph = function(p, E, vars, dev=T){
   for (i in 1:m){
     e = p[E[i, c("v1", "v2")],]
     tot_segs = E[i, "segments"]
+    if (E[i, "id"] == 0){
+      lwd = settings$bg_lwd
+    } else {
+      lwd = settings$text_lwd
+    }
     # Each of forward and reverse progress being done imply the other.
     if (E[i, "prog"] < tot_segs){
-      lines(e, col=get_colour(E[i, "col_0"]))
+      lines(e, col=get_colour(E[i, "col_0"]), lwd=lwd)
     }
-    draw_dir_edge(e, E[i, "prog"], tot_segs, E[i,"col_1"], E[i, "col_2"], settings$line_width)
+    draw_dir_edge(e, E[i, "prog"], tot_segs, E[i,"col_1"], E[i, "col_2"], lwd)
     if (E[i, "prog"] < tot_segs){
-      draw_dir_edge(e[2:1], E[i, "rev_prog"], tot_segs, E[i,"col_2"], E[i, "col_1"], settings$line_width)
+      draw_dir_edge(e[2:1,], E[i, "rev_prog"], tot_segs, E[i,"col_2"], E[i, "col_1"], lwd)
     }
   }
 }
@@ -75,7 +79,7 @@ draw_dir_edge = function(e, progress, total, col_1, col_2, lwd){
     for (i in 1:2) p_e[, i] = segs * (e[2, i] - e[1, i]) + e[1, i]
     cols = get_colour_inter(segs, col_1, col_2)
     for (j in 1:progress){
-      lines(e[(j-1):j, 1], e[(j-1):j, 2], col=cols[j], lwd=lwd)
+      lines(p_e[j:(j+1), 1], p_e[j:(j+1), 2], col=cols[j], lwd=lwd)
     }
   }
 }
@@ -87,7 +91,8 @@ if (settings$f.lux){
                    1,0,0,
                    1,.5,0,
                    0,1,0, 
-                   0.2,0.2,1),
+                   0.2,0.2,1,
+                   0.4,0.4,0.4),
                  ncol=3,
                  byrow = TRUE)
 } else {
@@ -96,7 +101,8 @@ if (settings$f.lux){
                    1,0,0,
                    1,.5,0,
                    0,1,0,
-                   0,0,1),
+                   0,0,1,
+                   0.4,0.4,0.4),
                  ncol=3,
                  byrow = TRUE)
 }
@@ -122,8 +128,8 @@ get_colour_inter = function(segs, c1, c2){
 }
 
 
-get_segs = function(n, progress){
-  (0:progress)/n
+get_segs = function(progress, total){
+  (0:progress)/total
 }
 
 
@@ -162,9 +168,9 @@ update_state = function(E, V){
   V[,"infected"] = V[,"infected"] | (V[,"exposed"] & runif(n) < infection_rate)
   v_inf = which(V[,"infected"])
 
-  e_update = (E[,"prog"] < E[,"segments"]) && (E[,"v1"] %in% v_inf)
+  e_update = which((E[,"prog"] < E[,"segments"]) & (E[,"v1"] %in% v_inf))
   E[e_update, "prog"] = E[e_update, "prog"] + 1
-  e_update = (E[,"rev_prog"] < E[,"segments"]) && (E[,"v2"] %in% v_inf)
+  e_update = which((E[,"rev_prog"] < E[,"segments"]) & (E[,"v2"] %in% v_inf))
   E[e_update, "rev_prog"] = E[e_update, "rev_prog"] + 1
 
   complete = (E[,"prog"] + E[,"rev_prog"]) >= E[,"segments"]

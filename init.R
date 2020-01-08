@@ -40,7 +40,7 @@ init = function(w){
   vertex_properties = c("exposed", "infected")
   V = matrix(FALSE, n, length(vertex_properties))
   colnames(V) = vertex_properties
-  V[sample(n, 1), "exposed"] = TRUE
+  V[sample(n, 1), ] = TRUE
   
   m_max = sum(unlist(lapply(adjl, length))) / 2 + 
     nrow(letter_vertices_and_edgelist$E)
@@ -79,8 +79,10 @@ init = function(w){
       rand_colours = get_colour_cycle(length(poly))
       E[poly, "col_1"] = rand_colours
       E[poly, "col_2"] = rand_colours[c(2:length(poly),1)]
+      if (all(E[poly, "col_1"] == E[poly, "col_2"])) 0/0
     } else {
       E[poly, "col_0"] = runif(length(poly), 0.01, 0.2)
+      E[poly, c("col_1", "col_2")] = 7
     }
   }
 
@@ -89,10 +91,10 @@ init = function(w){
   D = D + t(D) - 2*tcrossprod(p)
   diag(D) = 0
   lengths = sqrt(D[E[, c("v1", "v2")]])
-  E[,"segments"] = floor(5 + 2 * lengths)
+  E[,"segments"] = floor(6 + 2 * lengths)
+  # E[E[, "id"] == 0, "segments"] = 1
 
-  list(E=E,
-       V=V,
+  list(data=list(E=E, V=V),
        p=p,
        vars=vars)
 }

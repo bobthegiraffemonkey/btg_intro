@@ -27,7 +27,8 @@ settings["fps"] = 50 # ???
 
 settings["point_border_width"] = 6.28
 settings["view_border_width"] = 6.28 / 2
-settings["line_width"] = 6.28 / 4
+settings["text_lwd"] = 6.28 / 2
+settings["bg_lwd"] = settings$text_lwd / 2
 
 settings["f.lux"] = T
 
