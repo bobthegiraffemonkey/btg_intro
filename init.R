@@ -10,7 +10,7 @@ init = function(w){
   # Things to pass out to make available in other places
   vars = list()
   
-  # This is just for the words, not any other edges or vertices.
+  # This is just for the words, not any other edges or V.
   letter_vertices_and_edgelist = get_letter_vertices_and_edgelist(w, indents)
   n_w = nrow(letter_vertices_and_edgelist$p)
   
@@ -38,20 +38,21 @@ init = function(w){
   adjl = get_relative_neighbourhood_graph_as_adjlist(p)
   
   vertex_properties = c("exposed", "infected")
-  vertices = matrix(TRUE, n, length(vertex_properties))
-  vertices[sample(n, 1)] = 1
+  V = matrix(FALSE, n, length(vertex_properties))
+  colnames(V) = vertex_properties
+  V[sample(n, 1), "exposed"] = TRUE
   
   m_max = sum(unlist(lapply(adjl, length))) / 2 + 
     nrow(letter_vertices_and_edgelist$E)
   
-  undir_edge_properties = c("v1", "v2", "id", "col", "hide")
-  dir_edge_properties = c("v1", "v2", "col1", "col2", "progress", "segments")
-  undir_edges = matrix(0, m_max, length(undir_edge_properties))
+  E_props = c("v1", "v2", "id", "col_0", "col_1", "col_2", "prog", "rev_prog", "segments")
+  E = matrix(0, m_max, length(E_props))
+  colnames(E) = E_props
   
   # Put the edges from the letters in first, where edges (i,j) have i<j
   # Possibly stupid for large n, but n isn't large and this is neat.
   for (k in 1:n_w){
-    undir_edges[k, c("v1", "v2")] = range(letter_vertices_and_edgelist$E[k,])
+    E[k, c("v1", "v2")] = range(letter_vertices_and_edgelist$E[k,])
   }
   
   # I'm very glad n isn't large so I don't need to optimise much.
@@ -61,37 +62,25 @@ init = function(w){
       if (!any(letter_vertices_and_edgelist$E[,1] == i &
                letter_vertices_and_edgelist$E[,2] == j)){
         k = k + 1
-        undir_edges[k, 1:2] = c(i, j)
+        E[k, c("v1", "v2")] = c(i, j)
       }
     }
   }
   
   m = k
+  E = E[1:k,]
+
+  E[,"id"] = c(letter_vertices_and_edgelist$id,
+               rep(0, m - length(letter_vertices_and_edgelist$id)))
   
-  undir_edges = undir_edges[1:k,]
-  dir_edges = matrix(0, 2*m, length(dir_edge_properties))
-  dir_edges[1:m, c("v1", "v2")] = dir_edges[1:m + m, c("v2", "v1")] = undir_edges[, c("v1", "v2")]
-  
-  colnames(undir_edges) = undir_edge_properties
-  colnames(dir_edges) = dir_edge_properties
-  
-  undir_edges[,"id"] = c(letter_vertices_and_edgelist$id,
-                         rep(0, m - length(letter_vertices_and_edgelist$id)))
-  
-  for (i in 0:max(undir_edges[,"id"])){
-    poly = which(undir_edges[,"id"] == i)
+  for (i in 0:max(E[,"id"])){
+    poly = which(E[,"id"] == i)
     if (i > 0){
       rand_colours = get_colour_cycle(length(poly))
-      dir_edges[poly, "col1"] = rand_colours
-      dir_edges[poly, "col2"] = rand_colours[c(2:length(poly),1)]
-      dir_edges[poly + m, "col2"] = rand_colours
-      dir_edges[poly + m, "col1"] = rand_colours[c(2:length(poly),1)]
+      E[poly, "col_1"] = rand_colours
+      E[poly, "col_2"] = rand_colours[c(2:length(poly),1)]
     } else {
-      undir_edges[poly, "col"] = dir_edges[poly, "col1"] =
-                                 dir_edges[poly, "col2"] =
-                                 dir_edges[poly + m, "col2"] =
-                                 dir_edges[poly + m, "col1"] =
-                                 runif(length(poly), 0.01, 0.2)
+      E[poly, "col_0"] = runif(length(poly), 0.01, 0.2)
     }
   }
 
@@ -99,12 +88,11 @@ init = function(w){
   D = tcrossprod(psum, matrix(1, n, 1))
   D = D + t(D) - 2*tcrossprod(p)
   diag(D) = 0
-  lengths = sqrt(D[undir_edges[, c("v1", "v2")]])
-  dir_edges[, "segments"] = rep(floor(5 + 2 * lengths), 2)
+  lengths = sqrt(D[E[, c("v1", "v2")]])
+  E[,"segments"] = floor(5 + 2 * lengths)
 
-  list(dir_edges=dir_edges,
-       undir_edges=undir_edges,
-       vertices=vertices,
+  list(E=E,
+       V=V,
        p=p,
        vars=vars)
 }

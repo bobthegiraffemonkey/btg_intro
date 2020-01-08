@@ -31,7 +31,7 @@ get_filtered_edgelist = function(adj, n_filter){
 
 
 # Pass in vertex and edge data and draw the graph.
-draw_graph = function(p, undir_edges, dir_edges, vars, dev=T){
+draw_graph = function(p, E, vars, dev=T){
   if (dev){
     graphics.off()
     x11(width=settings$win_width,
@@ -47,30 +47,35 @@ draw_graph = function(p, undir_edges, dir_edges, vars, dev=T){
        xlim=vars$view_xlim,
        ylim=vars$view_ylim)
   
-  abline(v=min(p[,1]) - settings$view_border_width)
-  abline(v=max(p[,1]) + settings$view_border_width)
-  abline(h=min(p[,2]) - settings$view_border_width)
-  abline(h=max(p[,2]) + settings$view_border_width)
+  abline(v=vars$view_xlim[1])
+  abline(v=vars$view_xlim[2])
+  abline(h=vars$view_ylim[1])
+  abline(h=vars$view_ylim[2])
   
-  m = nrow(undir_edges)
+  m = nrow(E)
   for (i in 1:m){
-    e = p[undir_edges[i, c("v1", "v2")],]
-    if (undir_edges[i, "hide"] == 0){
-      lines(e, col=get_colour(undir_edges[i, "col"]))
+    e = p[E[i, c("v1", "v2")],]
+    tot_segs = E[i, "segments"]
+    # Each of forward and reverse progress being done imply the other.
+    if (E[i, "prog"] < tot_segs){
+      lines(e, col=get_colour(E[i, "col_0"]))
     }
-    tot_segs = undir_edges[i,"segments"]
-    for (j in c(i, i+m)){
-      if (j == i) order = 1:2 else order = 2:1
-      pro_segs = dir_edges[j, "progress"]
-      if (pro_segs > 0){
-        p_e = matrix(0, progress+1, 2)
-        segs = get_segs(pro_segs, tot_segs)
-        for (ii in 1:2) p_e[,order[ii]] = segs * (e[2,ii]-e[1,ii]) + e[1,ii]
-        cols = get_colour_inter(segs, dir_edges[i,"col1"], dir_edges[i,"col2"])
-        for (jj in 1:pro_segs){
-          lines(e[(jj-1):jj, 1], e[(jj-1):jj, 2], col=cols[jj])
-        }
-      }
+    draw_dir_edge(e, E[i, "prog"], tot_segs, E[i,"col_1"], E[i, "col_2"], settings$line_width)
+    if (E[i, "prog"] < tot_segs){
+      draw_dir_edge(e[2:1], E[i, "rev_prog"], tot_segs, E[i,"col_2"], E[i, "col_1"], settings$line_width)
+    }
+  }
+}
+
+
+draw_dir_edge = function(e, progress, total, col_1, col_2, lwd){
+  if (progress > 0){
+    p_e = matrix(0, progress+1, 2)
+    segs = get_segs(progress, total)
+    for (i in 1:2) p_e[, i] = segs * (e[2, i] - e[1, i]) + e[1, i]
+    cols = get_colour_inter(segs, col_1, col_2)
+    for (j in 1:progress){
+      lines(e[(j-1):j, 1], e[(j-1):j, 2], col=cols[j], lwd=lwd)
     }
   }
 }
@@ -117,7 +122,6 @@ get_colour_inter = function(segs, c1, c2){
 }
 
 
-
 get_segs = function(n, progress){
   (0:progress)/n
 }
@@ -151,26 +155,25 @@ get_colour_cycle = function(n){
 }
 
 
-update_state = function(undir_edges, dir_edges, vertices){
+update_state = function(E, V){
   infection_rate = 0.42
-  n = nrow(vertices)
-  m = nrow(undir_edges)
-  vertices$infected = vertices$infected || (vertices$exposed && runif(n) < infection_rate)
-  v_inf = which(vertices$infected)
-  e_inf = which(undir_edges[c("v1", "v2")] %in% v_inf)
-  
-  dir_edges[e_inf, "progress"] = max(dir_edges[e_inf, "progress"] + 1,
-                                     dir_edges[e_inf, "segments"])
-  met = which(dir_edges[1:m, "progress"] + dir_edges[(m+1):(2*m), "progress"] >= dir_edges[1:m, "segments"])
-  dir_edges[met, "progress"] = dir_edges[met + m, "progress"] = dir_edges[met, "segments"]
-  undir_edges[met, "hide"] = TRUE
-  complete = which(dir_edges$progress == dir_edges$segments)
-  vertices$exposed[dir_edges[complete, "v2"]] = TRUE
-  done = length(complete) == 2*m
+  n = nrow(V)
+  m = nrow(E)
+  V[,"infected"] = V[,"infected"] | (V[,"exposed"] & runif(n) < infection_rate)
+  v_inf = which(V[,"infected"])
 
-  list(dir_edges=dir_edges,
-       undir_edges=undir_edges,
-       vertices=vertices,
+  e_update = (E[,"prog"] < E[,"segments"]) && (E[,"v1"] %in% v_inf)
+  E[e_update, "prog"] = E[e_update, "prog"] + 1
+  e_update = (E[,"rev_prog"] < E[,"segments"]) && (E[,"v2"] %in% v_inf)
+  E[e_update, "rev_prog"] = E[e_update, "rev_prog"] + 1
+
+  complete = (E[,"prog"] + E[,"rev_prog"]) >= E[,"segments"]
+  E[complete, "prog"] = E[complete, "rev_prog"] = E[complete, "segments"]
+  V[c(E[complete, c("v1", "v2")]), "exposed"] = TRUE
+  done = all(complete)
+
+  list(E=E,
+       V=V,
        done=done)
 }
 
