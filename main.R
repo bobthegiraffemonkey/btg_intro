@@ -34,6 +34,36 @@ source("graph_functions.R")
 source("animate.R")
 source("init.R")
 
-animate_and_save(word,
-                 indents,
-                 filename)
+main = function(w, indents, filename, settings, dev=TRUE){
+  # Plan is to call into the plotting function and pass in dev
+  # if true, plot to external window, else actually live up to
+  # function name.
+  
+  word_split = str_split(w, "", simplify = TRUE)
+  stuff = init(word_split, settings)
+  
+  # frame = 0
+  # while (!stuff$data$done) {
+  #   frame = frame + 1
+  #   print(frame)
+  #   stuff$data = update_state(stuff$data$E, stuff$data$V)
+  # }
+  
+  ani.options(ffmpeg = "C:/Users/USer/Downloads/ffmpeg-4.2-win64-static/ffmpeg-4.2-win64-static/bin/ffmpeg",
+              ani.width=720,
+              ani.heigth=480)
+  frame = 0
+  saveVideo({ani.options(interval = 1/29.97, nmax = 50)
+    while (!stuff$data$done) {
+      frame = frame + 1
+      print(frame)
+      for (i in settings$updates_per_frame) stuff$data = update_state(stuff$data$E, stuff$data$V)
+      draw_graph(stuff$p, stuff$data$E, stuff$vars, settings)
+      ani.pause()
+    }
+  }, video.name = filename)
+  print("done")
+
+  # draw_graph(stuff$p, stuff$data$E, stuff$vars, settings)
+  # plot_word(word_split, indents)
+}

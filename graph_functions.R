@@ -31,7 +31,7 @@ get_filtered_edgelist = function(adj, n_filter){
 
 
 # Pass in vertex and edge data and draw the graph.
-draw_graph = function(p, E, vars, dev=T){
+draw_graph = function(p, E, vars, settings, dev=FALSE){
   if (dev){
     graphics.off()
     x11(width=settings$win_width,
@@ -161,8 +161,10 @@ get_colour_cycle = function(n){
 }
 
 
-update_state = function(E, V){
-  infection_rate = 0.42
+update_state = function(E, V, settings){
+  # infection_rate = settings["infection_rate"]
+  # infection_rate = 1 / exp(1)
+  infection_rate = 0.2
   n = nrow(V)
   m = nrow(E)
   V[,"infected"] = V[,"infected"] | (V[,"exposed"] & runif(n) < infection_rate)
