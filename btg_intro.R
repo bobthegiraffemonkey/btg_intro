@@ -27,9 +27,10 @@ settings["view_border_width"] = 6.28 / 2
 settings["text_lwd"] = 6.28 / 2
 settings["bg_lwd"] = settings$text_lwd / 2
 
-settings["updates_per_frame"] = 3
+settings["updates_per_frame"] = 6
+settings["infection_rate"] = (exp(1)) / 100
 
-settings["f.lux"] = T
+settings["f.lux"] = F
 
 source("main.R")
 

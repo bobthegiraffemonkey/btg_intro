@@ -31,7 +31,6 @@ source("letter_functions.R")
 source("word_functions.R")
 source("plot_functions.R")
 source("graph_functions.R")
-source("animate.R")
 source("init.R")
 
 main = function(w, indents, filename, settings, dev=TRUE){
@@ -57,7 +56,7 @@ main = function(w, indents, filename, settings, dev=TRUE){
     while (!stuff$data$done) {
       frame = frame + 1
       print(frame)
-      for (i in settings$updates_per_frame) stuff$data = update_state(stuff$data$E, stuff$data$V)
+      for (i in 1:settings$updates_per_frame) stuff$data = update_state(stuff$data$E, stuff$data$V, settings)
       draw_graph(stuff$p, stuff$data$E, stuff$vars, settings)
       ani.pause()
     }
