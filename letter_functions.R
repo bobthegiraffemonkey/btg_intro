@@ -49,7 +49,7 @@ make_point = function(adj, x, y){
   add_points
 }
 
-get_letter_outline = function(l){
+get_letter_polygons = function(l){
   outline_raw = outlines[[l]]
   if (is.null(outline_raw)) outline_raw = outlines$o # TODO: remove
   outline_raw = str_split(str_trim(outline_raw), "\n", simplify = T)
@@ -93,8 +93,9 @@ normalise = function(v, old_lim, new_lim){
   (v - old_lim[1]) * diff(new_lim) / diff(old_lim) + new_lim[1]
 }
 
+# Dev only, for testing letter shapes.
 plot_letter = function(l){
-  poly_list = get_letter_outline(l)
+  poly_list = get_letter_polygons(l)
   lims = get_letter_dims(l)
   graphics.off()
   x11()
@@ -105,7 +106,10 @@ plot_letter = function(l){
   }
 }
 
-# x1, y1, x2, y2
+# Returns what the extreme coordinates should be for each letter.
+# This means they can be specified in with more convenient numbers,
+# then adjusted to fit.
+# Format: x1, y1, x2, y2
 get_letter_dims = function(l){
   if (l %in% c("a", "e", "n", "o"))
     return(c(0, 3, 0, 3))
@@ -123,8 +127,6 @@ get_letter_dims = function(l){
     return(c(0, 5, 0, 3))
   if (l %in% c("r"))
     return(c(0, 2, 0, 3))
-  if (l == "\n")
-    return(max(sapply(letters, get_letter_dims)[4,]) + 1)
   c(0, 0, 0, 0)
 }
 

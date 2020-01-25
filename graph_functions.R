@@ -3,9 +3,7 @@
 get_relative_neighbourhood_graph_as_adjlist = function(p){
   point_config = list(x=p[,1],
                       y=p[,2],
-                      n=nrow(p),
-                      window=list(x=range(p[,1]),
-                                  y=range(p[,2])))
+                      n=nrow(p))
   spatgraph(point_config, "RNG")$edges
 }
 
@@ -31,7 +29,7 @@ get_filtered_edgelist = function(adj, n_filter){
 
 
 # Pass in vertex and edge data and draw the graph.
-draw_graph = function(p, E, vars, settings, dev=FALSE){
+draw_graph = function(p, E, E_aux, vars, settings, dev=FALSE){
   if (dev){
     graphics.off()
     x11(width=settings$win_width,
@@ -53,58 +51,31 @@ draw_graph = function(p, E, vars, settings, dev=FALSE){
   
   m = nrow(E)
   for (i in 1:m){
-    e = p[E[i, c("v1", "v2")],]
     tot_segs = E[i, "segments"]
-    if (E[i, "id"] == 0){
-      lwd = settings$bg_lwd
-    } else {
-      lwd = settings$text_lwd
+    
+    # Each of forward and reverse progress being done imply the other,
+    # we draw the base edge if neither are complete.
+    if (E[i, "fwd_prog"] < tot_segs){
+      lines(p[E[i, c("v1", "v2")],], col=get_colour(E[i, "col_0"]), lwd=E[i, "lwd"])
     }
-    # Each of forward and reverse progress being done imply the other.
-    if (E[i, "prog"] < tot_segs){
-      lines(e, col=get_colour(E[i, "col_0"]), lwd=lwd)
-    }
-    draw_dir_edge(e, E[i, "prog"], tot_segs, E[i,"col_1"], E[i, "col_2"], lwd)
-    if (E[i, "prog"] < tot_segs){
-      draw_dir_edge(e[2:1,], E[i, "rev_prog"], tot_segs, E[i,"col_2"], E[i, "col_1"], lwd)
-    }
+    
+    # Draw the directed edge in each direction.
+    draw_dir_edges(E[i, "fwd_prog"], E[i, "rev_prog"], tot_segs, E_aux$E_p[[i]], E_aux$E_col[[i]], lwd=E[i, "lwd"])
   }
 }
 
 
-draw_dir_edge = function(e, progress, total, col_1, col_2, lwd){
-  if (progress > 0){
-    p_e = matrix(0, progress+1, 2)
-    segs = get_segs(progress, total)
-    for (i in 1:2) p_e[, i] = segs * (e[2, i] - e[1, i]) + e[1, i]
-    cols = get_colour_inter(segs, col_1, col_2)
-    for (j in 1:progress){
-      lines(p_e[j:(j+1), 1], p_e[j:(j+1), 2], col=cols[j], lwd=lwd)
+draw_dir_edges = function(fwd_prog, rev_prog, tot_segs, segs_p, segs_col, lwd){
+  if (fwd_prog > 0){
+    for (i in 1:fwd_prog){
+      lines(segs_p[i:(i+1),], col=segs_col[i], lwd=lwd)
     }
   }
-}
-
-
-if (settings$f.lux){
-  colours=matrix(c(.9,.9,0,
-                   1,1,1,
-                   1,0,0,
-                   1,.5,0,
-                   0,1,0, 
-                   0.2,0.2,1,
-                   0.4,0.4,0.4),
-                 ncol=3,
-                 byrow = TRUE)
-} else {
-  colours=matrix(c(1,1,0,
-                   1,1,1,
-                   1,0,0,
-                   1,.5,0,
-                   0,1,0,
-                   0,0,1,
-                   0.4,0.4,0.4),
-                 ncol=3,
-                 byrow = TRUE)
+  if ((fwd_prog < tot_segs) && (rev_prog > 0)){
+    for (i in tot_segs:(tot_segs - rev_prog + 1)){
+      lines(segs_p[i:(i+1),], col=segs_col[i], lwd=lwd)
+    }
+  }
 }
 
 
@@ -117,19 +88,27 @@ get_colour = function(n){
 }
 
 
-get_colour_inter = function(segs, c1, c2){
-  out = vector(mode="character", length(segs))
-  for (i in seq_along(out)){
-    s = segs[i]
-    colour = colours[c1,] * (1-s) + colours[c2,] * s
-    out[i] = rgb(colour[1], colour[2], colour[3])
+get_col_segs = function(n_segs, c1, c2){
+  segs = (0:n_segs) / n_segs
+  out = vector(mode="character", n_segs)
+  if (c1 < 1){
+    out = rep(grey(c1), segs)
+  } else {
+    for (i in seq_along(out)){
+      s = segs[i]
+      colour = colours[c1,] * (1-s) + colours[c2,] * s
+      out[i] = rgb(colour[1], colour[2], colour[3])
+    }
   }
   out
 }
 
 
-get_segs = function(progress, total){
-  (0:progress)/total
+get_segs = function(e, n_segs){
+  segs = (0:n_segs) / n_segs
+  p_e = matrix(0, n_segs+1, 2)
+  for (i in 1:2) p_e[, i] = segs * (e[2, i] - e[1, i]) + e[1, i]
+  p_e
 }
 
 
@@ -162,22 +141,23 @@ get_colour_cycle = function(n){
 
 
 update_state = function(E, V, settings){
-  # infection_rate = settings["infection_rate"]
-  # infection_rate = 1 / exp(1)
-  infection_rate = settings$infection_rate
-  n = nrow(V)
-  m = nrow(E)
-  V[,"infected"] = V[,"infected"] | (V[,"exposed"] & runif(n) < infection_rate)
+  # If a vertex is exposed, it gets randomly infected at the given rate.
+  # Get a list of infected vertices.
+  V[,"infected"] = V[,"infected"] |
+                  (V[,"exposed"] & (runif(nrow(V)) < settings$infection_rate))
   v_inf = which(V[,"infected"])
 
-  e_update = which((E[,"prog"] < E[,"segments"]) & (E[,"v1"] %in% v_inf))
-  E[e_update, "prog"] = E[e_update, "prog"] + 1
-  e_update = which((E[,"rev_prog"] < E[,"segments"]) & (E[,"v2"] %in% v_inf))
-  E[e_update, "rev_prog"] = E[e_update, "rev_prog"] + 1
+  # Update forward progress then backward progress.
+  e_update_fwd = which((E[,"fwd_prog"] < E[,"segments"]) & (E[,"v1"] %in% v_inf))
+  e_update_rev = which((E[,"rev_prog"] < E[,"segments"]) & (E[,"v2"] %in% v_inf))
+  E[e_update_fwd, "fwd_prog"] = E[e_update_fwd, "fwd_prog"] + 1
+  E[e_update_rev, "rev_prog"] = E[e_update_rev, "rev_prog"] + 1
 
-  complete = (E[,"prog"] + E[,"rev_prog"]) >= E[,"segments"]
-  E[complete, "prog"] = E[complete, "rev_prog"] = E[complete, "segments"]
+  # Tidy up complete edges, make sure both incident vertices are considered exposed.
+  complete = (E[,"fwd_prog"] + E[,"rev_prog"]) >= E[,"segments"]
+  E[complete, "fwd_prog"] = E[complete, "rev_prog"] = E[complete, "segments"]
   V[c(E[complete, c("v1", "v2")]), "exposed"] = TRUE
+  
   done = all(complete)
 
   list(E=E,

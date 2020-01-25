@@ -1,11 +1,30 @@
 
-# Environments are modified in place, which is useful for tracking state.
-# Basically, they can be used to emulate pass-by-reference. But I'm not
-# sure it's worth the effort here, so I'm tracking the state with global
-# variables. I know that's generally bad, but for a small personal
-# project with a very visual output being ran O(1) times, I don't care.
-# At least I'm passing some of it around in lists.
+# Set up some colours to refer to. Tweak them for dev if it's late
+# and f.lux has kicked in.
+if (settings$f.lux){
+  colours=matrix(c(.9,.9,0,
+                   1,1,1,
+                   1,0,0,
+                   1,.5,0,
+                   0,1,0, 
+                   0.2,0.2,1,
+                   0.4,0.4,0.4),
+                 ncol=3,
+                 byrow = TRUE)
+} else {
+  colours=matrix(c(1,1,0,
+                   1,1,1,
+                   1,0,0,
+                   1,.5,0,
+                   0,1,0,
+                   0,0,1,
+                   0.4,0.4,0.4),
+                 ncol=3,
+                 byrow = TRUE)
+}
 
+
+# Set up some data and stuff.
 init = function(w, settings){
   # Things to pass out to make available in other places
   vars = list()
@@ -47,17 +66,15 @@ init = function(w, settings){
   m_max = sum(unlist(lapply(adjl, length))) / 2 + 
     nrow(letter_vertices_and_edgelist$E)
   
-  E_props = c("v1", "v2", "id", "col_0", "col_1", "col_2", "prog", "rev_prog", "segments")
+  E_props = c("v1", "v2", "id", "col_0", "col_1", "col_2", "fwd_prog", "rev_prog", "segments", "lwd")
   E = matrix(0, m_max, length(E_props))
   colnames(E) = E_props
   
-  # Put the edges from the letters in first, where edges (i,j) have i<j
-  # Possibly stupid for large n, but n isn't large and this is neat.
-  for (k in 1:n_w){
-    E[k, c("v1", "v2")] = range(letter_vertices_and_edgelist$E[k,])
-  }
+  # Put the edges from the letters in first.
+  E[1:n_w, c("v1", "v2")] = letter_vertices_and_edgelist$E[1:n_w,]
   
   # I'm very glad n isn't large so I don't need to optimise much.
+  k = n_w
   for (i in 1:n){
     for (j in adjl[[i]]){
       if (i > j) next
@@ -69,6 +86,7 @@ init = function(w, settings){
     }
   }
   
+  # E was made too large, so only keep the rows with actual edges.
   m = k
   E = E[1:k,]
 
@@ -93,10 +111,28 @@ init = function(w, settings){
   diag(D) = 0
   lengths = sqrt(D[E[, c("v1", "v2")]])
   E[,"segments"] = floor(3 + 2 * lengths)
+  
+  E[E[, "id"] == 0, "lwd"] = settings$bg_lwd
+  E[E[, "id"] > 0, "lwd"] = settings$text_lwd
+
+  E_col = list()
+  for (i in 1:m){
+    E_col[[i]] = get_col_segs(E[i,"segments"], E[i,"col_1"], E[i,"col_2"])
+  }
+
+  E_p = list()
+  for (i in 1:m){
+    E_p[[i]] = get_segs(p[E[i, c("v1", "v2")], ], E[i, "segments"])
+  }
 
   done = FALSE
 
-  list(data=list(E=E, V=V, done=done),
+  # Return a list of stuff, including lists.
+  list(data=list(E=E,
+                 V=V,
+                 done=done),
+       E_aux=list(E_col=E_col,
+                  E_p=E_p),
        p=p,
        vars=vars)
 }

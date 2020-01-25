@@ -29,40 +29,38 @@ require("Matrix")
 source("letters_def.R")
 source("letter_functions.R")
 source("word_functions.R")
-source("plot_functions.R")
 source("graph_functions.R")
 source("init.R")
 
-main = function(w, indents, filename, settings, dev=TRUE){
-  # Plan is to call into the plotting function and pass in dev
-  # if true, plot to external window, else actually live up to
-  # function name.
-  
+main = function(w, indents, filename, settings, dev=FALSE){
+  # Split the input into a vector of characters, then initialise stuff.
   word_split = str_split(w, "", simplify = TRUE)
   stuff = init(word_split, settings)
   
-  # frame = 0
-  # while (!stuff$data$done) {
-  #   frame = frame + 1
-  #   print(frame)
-  #   stuff$data = update_state(stuff$data$E, stuff$data$V)
-  # }
-  
-  ani.options(ffmpeg = "C:/Users/USer/Downloads/ffmpeg-4.2-win64-static/ffmpeg-4.2-win64-static/bin/ffmpeg",
-              ani.width=720,
-              ani.heigth=480)
-  frame = 0
-  saveVideo({ani.options(interval = 1/29.97, nmax = 50)
+  if (dev){
     while (!stuff$data$done) {
-      frame = frame + 1
-      print(frame)
-      for (i in 1:settings$updates_per_frame) stuff$data = update_state(stuff$data$E, stuff$data$V, settings)
-      draw_graph(stuff$p, stuff$data$E, stuff$vars, settings)
-      ani.pause()
+      stuff$data = update_state(stuff$data$E, stuff$data$V, settings)
     }
-  }, video.name = filename)
-  print("done")
-
-  # draw_graph(stuff$p, stuff$data$E, stuff$vars, settings)
-  # plot_word(word_split, indents)
+    draw_graph(stuff$p, stuff$data$E, stuff$E_aux, stuff$vars, settings, dev)
+  } else {
+    ani.options(ffmpeg = "C:/Users/USer/Downloads/ffmpeg-4.2-win64-static/ffmpeg-4.2-win64-static/bin/ffmpeg",
+                ani.width=720,
+                ani.heigth=480,
+                interval = 1/29.97)
+    
+    frame = 0
+    saveVideo({
+      while (!stuff$data$done) {
+        frame = frame + 1
+        print(frame)
+        if (frame > settings$initial_wait){
+          for (i in 1:settings$updates_per_frame) stuff$data = update_state(stuff$data$E, stuff$data$V, settings)
+        }
+        draw_graph(stuff$p, stuff$data$E, stuff$E_aux, stuff$vars, settings, dev)
+        ani.pause()
+      }
+    },
+    video.name = filename)
+    print("done")
+  }
 }
